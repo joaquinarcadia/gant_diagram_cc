@@ -13,7 +13,6 @@ jobs:
             id-token: write
         environment:
             name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
 
         steps:
             - name: Checkout
@@ -24,17 +23,14 @@ jobs:
               with:
                   node-version: "lts/*"
 
-            - name: Install dependencies (if needed)
+            - name: Install dependencies
               run: npm install
 
-            - name: Build static site (replace with your build command)
+            - name: Build static site
               run: npm run build
 
-            - name: Upload artifact for GitHub Pages
-              uses: actions/upload-pages-artifact@v3
-              with:
-                  path: ./dist
-
             - name: Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v4
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./dist
