@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
 export default defineConfig({
-    base: "/",
+    base: "https://github.com/joaquinarcadia/gant_diagram_cc",
     plugins: [react()],
     preview: {
         port: 8080,
