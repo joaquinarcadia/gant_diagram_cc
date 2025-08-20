@@ -180,7 +180,7 @@ function App() {
                 <Container maxWidth="xl">
                     <Box sx={{ my: 4 }}>
                         <Typography variant="h3" component="h1" gutterBottom align="center">
-                            User Stories Gantt Chart
+                            CC User Stories Gantt Chart
                         </Typography>
 
                         <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
