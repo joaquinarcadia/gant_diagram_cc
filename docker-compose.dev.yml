@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        ports:
+            - "3000:3000"
+        container_name: gantt-dev
+        volumes:
+            - .:/app
+            - /app/node_modules # Prevents local node_modules from mounting

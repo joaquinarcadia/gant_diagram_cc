@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+    dev:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "3000:3000"
+        container_name: gantt-prod
+        volumes:
+            - .:/app
+            - /app/node_modules
