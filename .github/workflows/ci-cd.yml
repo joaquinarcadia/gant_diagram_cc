@@ -8,11 +8,11 @@ on:
 jobs:
     build-and-deploy:
         runs-on: ubuntu-latest
-        permissions:
-            pages: write
-            id-token: write
-        environment:
-            name: github-pages
+        # permissions:
+        #     pages: write
+        #     id-token: write
+        # environment:
+        #     name: github-pages
 
         steps:
             - name: Checkout
