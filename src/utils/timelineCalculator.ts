@@ -137,17 +137,22 @@ export const calculateTimeline = (userStories: UserStory[], startDate: Date, est
                 );
 
                 // Calculate story start date (within the sprint)
-                const storyStartDate = getNextWorkingDay(latestDependencyEndDate);
-
-                // Calculate end date - duration equals story points in calendar days
-                let endDate = new Date(storyStartDate);
-                for (let i = 0; i < storyPoints - 1; i++) {
-                    endDate = addDays(endDate, 1);
+                let storyStartDate;
+                if (story.dependencies.length === 0) {
+                    // First story: start exactly on selected start date
+                    storyStartDate = startDate;
+                } else {
+                    storyStartDate = getNextWorkingDay(latestDependencyEndDate);
                 }
 
-                // If end date falls on weekend, move to next working day
-                if (isWeekend(endDate)) {
+                // Calculate end date - duration equals story points in working days (excluding weekends)
+                let endDate = new Date(storyStartDate);
+                let workingDays = 0;
+
+                // Count working days until we reach the required story points
+                while (workingDays < storyPoints - 1) {
                     endDate = getNextWorkingDay(endDate);
+                    workingDays++;
                 }
 
                 // Update developer sprint assignments

@@ -1,9 +1,15 @@
 import React, { useState, useMemo } from "react";
+
 import { ThemeProvider, createTheme, CssBaseline, Container, Box, Typography, ToggleButton, ToggleButtonGroup, Paper, Grid } from "@mui/material";
+import { CalendarToday } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+
+import { format } from "date-fns";
+
 import GanttChart from "./components/GanttChart";
-import { format, addDays } from "date-fns";
+
 import { calculateProjectEndDate } from "./utils/timelineCalculator";
 
 const theme = createTheme({
@@ -156,15 +162,24 @@ const userStories: UserStory[] = [
 
 function App() {
     const [estimationType, setEstimationType] = useState<"min" | "max">("min");
-    const startDate = addDays(new Date(), 1); // Tomorrow
+    const [startDate, setStartDate] = useState<Date | null>(new Date()); // Default to today
+    const [showDatePicker, setShowDatePicker] = useState(false);
+
+    const handleShowDatePicker = () => {
+        setShowDatePicker(!showDatePicker);
+    };
 
     // Calculate end dates for both minimum and maximum cases
     const minEndDate = useMemo(() => {
-        return calculateProjectEndDate(userStories, startDate, "min", 3);
+        if (!startDate) return null;
+        const endDate = calculateProjectEndDate(userStories, startDate, "min", 3);
+        return endDate;
     }, [startDate]);
 
     const maxEndDate = useMemo(() => {
-        return calculateProjectEndDate(userStories, startDate, "max", 3);
+        if (!startDate) return null;
+        const endDate = calculateProjectEndDate(userStories, startDate, "max", 3);
+        return endDate;
     }, [startDate]);
 
     const handleEstimationChange = (_event: React.MouseEvent<HTMLElement>, newEstimationType: "min" | "max" | null) => {
@@ -173,27 +188,90 @@ function App() {
         }
     };
 
+    const disableWeekends = (date: Date) => {
+        const day = date.getDay();
+        return day === 0 || day === 6;
+    };
+
+    const handleDateChange = (newValue: Date | null) => {
+        setStartDate(newValue);
+        setShowDatePicker(false);
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <CssBaseline />
                 <Container maxWidth="xl">
-                    <Box sx={{ my: 4 }}>
+                    <Box
+                        sx={{
+                            my: 4,
+                        }}
+                    >
                         <Typography variant="h3" component="h1" gutterBottom align="center">
                             CC User Stories Gantt Chart
                         </Typography>
 
-                        <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
-                            <Paper elevation={2} sx={{ p: 2 }}>
+                        <Box
+                            sx={{
+                                mb: 3,
+                                display: "flex",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Paper
+                                elevation={2}
+                                sx={{
+                                    p: 2,
+                                }}
+                            >
                                 <Grid container spacing={3} alignItems="center">
                                     <Grid>
-                                        <Typography variant="body1">
-                                            <strong>Start Date:</strong> {format(startDate, "MM/dd/yyyy")}
-                                        </Typography>
+                                        {!showDatePicker && (
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    cursor: "pointer",
+                                                }}
+                                                onClick={handleShowDatePicker}
+                                            >
+                                                <Typography variant="body1">
+                                                    <strong>Start Date:</strong> {startDate ? format(startDate, "MM/dd/yyyy") : "-"}
+                                                </Typography>
+                                                <Box
+                                                    sx={{
+                                                        ml: 1,
+                                                    }}
+                                                >
+                                                    <CalendarToday fontSize="small" />
+                                                </Box>
+                                            </Box>
+                                        )}
+                                        {showDatePicker && (
+                                            <DatePicker
+                                                open
+                                                label="Start Date"
+                                                value={startDate}
+                                                defaultValue={startDate}
+                                                onChange={handleDateChange}
+                                                onClose={handleShowDatePicker}
+                                                shouldDisableDate={disableWeekends}
+                                                slotProps={{
+                                                    textField: {
+                                                        variant: "outlined",
+                                                        fullWidth: true,
+                                                    },
+                                                }}
+                                            />
+                                        )}
                                     </Grid>
                                     <Grid>
                                         <Typography variant="body1">
-                                            <strong>End Date:</strong> {format(estimationType === "min" ? minEndDate : maxEndDate, "MM/dd/yyyy")}
+                                            <strong>End Date:</strong>{" "}
+                                            {minEndDate && maxEndDate
+                                                ? format(estimationType === "min" ? minEndDate : maxEndDate, "MM/dd/yyyy")
+                                                : "-"}
                                         </Typography>
                                     </Grid>
                                     <Grid>
@@ -211,7 +289,7 @@ function App() {
                             </Paper>
                         </Box>
 
-                        <GanttChart userStories={userStories} startDate={startDate} estimationType={estimationType} teamSize={3} />
+                        {startDate && <GanttChart userStories={userStories} startDate={startDate} estimationType={estimationType} teamSize={3} />}
                     </Box>
                 </Container>
             </LocalizationProvider>

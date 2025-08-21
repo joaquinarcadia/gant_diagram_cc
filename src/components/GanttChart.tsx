@@ -1,6 +1,8 @@
 import React, { useMemo } from "react";
+
 import { Box, Paper, Typography, Chip, Divider } from "@mui/material";
 import { format, addDays, isWeekend } from "date-fns";
+
 import { calculateTimeline } from "../utils/timelineCalculator";
 
 interface UserStory {
@@ -125,7 +127,13 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
 
             {/* Stories Timeline */}
             {Object.entries(storiesByEpic).map(([epic, stories]) => (
-                <Box key={epic} sx={{ mb: 3 }}>
+                <Box
+                    key={epic}
+                    sx={{
+                        mb: 3,
+                        minWidth: "fit-content",
+                    }}
+                >
                     {/* Epic Header */}
                     <Box sx={{ display: "flex", mb: 1 }}>
                         <Box sx={{ width: 300, flexShrink: 0 }}>
@@ -154,7 +162,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
                                     )}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {story.storyPoints} SP • {story.duration} days • Dev {story.assignedDeveloper} • Sprint{" "}
+                                    {story.storyPoints} SP • {story.duration} working days • Dev {story.assignedDeveloper} • Sprint{" "}
                                     {Math.floor((story.sprintStartDate.getTime() - startDate.getTime()) / (10 * 24 * 60 * 60 * 1000)) + 1}
                                 </Typography>
                             </Box>
@@ -199,7 +207,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
                         </Box>
                     ))}
 
-                    <Divider sx={{ mt: 2 }} />
+                    <Divider
+                        sx={{
+                            mt: 2,
+                            width: "100%",
+                        }}
+                    />
                 </Box>
             ))}
         </Paper>
