@@ -24,6 +24,12 @@ const theme = createTheme({
     },
 });
 
+const PRIORITIES = {
+    LOW: "low",
+    MEDIUM: "medium",
+    HIGH: "high",
+} as const;
+
 interface UserStory {
     id: string;
     title: string;
@@ -31,6 +37,7 @@ interface UserStory {
     minSP: number;
     maxSP: number;
     dependencies: string[];
+    priority: (typeof PRIORITIES)[keyof typeof PRIORITIES] | null;
 }
 
 // User stories data
@@ -43,6 +50,7 @@ const userStories: UserStory[] = [
         minSP: 3,
         maxSP: 5,
         dependencies: [],
+        priority: null,
     },
     {
         id: "consultant-job-integration",
@@ -51,6 +59,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: ["consultant-job-ui"],
+        priority: null,
     },
     {
         id: "consultant-payments",
@@ -59,6 +68,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: [],
+        priority: null,
     },
 
     // Epic: Client
@@ -69,6 +79,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: [],
+        priority: null,
     },
     {
         id: "client-new-interview",
@@ -77,6 +88,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: ["client-interviews"],
+        priority: null,
     },
     {
         id: "client-hire-contract",
@@ -85,14 +97,16 @@ const userStories: UserStory[] = [
         minSP: 3,
         maxSP: 3,
         dependencies: ["client-new-interview"],
+        priority: null,
     },
     {
         id: "client-docusign",
         title: "DocuSign integration",
         epic: "Client",
-        minSP: 8,
+        minSP: 5,
         maxSP: 8,
         dependencies: ["client-hire-contract"],
+        priority: null,
     },
     {
         id: "client-job-integration",
@@ -101,6 +115,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: [],
+        priority: null,
     },
     {
         id: "client-post-job",
@@ -109,6 +124,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: ["client-job-integration"],
+        priority: null,
     },
     {
         id: "client-search-ui",
@@ -117,6 +133,7 @@ const userStories: UserStory[] = [
         minSP: 1,
         maxSP: 1,
         dependencies: [],
+        priority: null,
     },
     {
         id: "client-projects-ui",
@@ -125,6 +142,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 5,
         dependencies: [],
+        priority: null,
     },
     {
         id: "client-projects-integration",
@@ -133,6 +151,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: ["client-projects-ui"],
+        priority: null,
     },
     {
         id: "client-worklog-ui",
@@ -141,6 +160,7 @@ const userStories: UserStory[] = [
         minSP: 3,
         maxSP: 5,
         dependencies: ["client-projects-integration"],
+        priority: null,
     },
     {
         id: "client-worklog-integration",
@@ -149,6 +169,7 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: ["client-worklog-ui"],
+        priority: null,
     },
     {
         id: "client-payments",
@@ -157,6 +178,62 @@ const userStories: UserStory[] = [
         minSP: 5,
         maxSP: 8,
         dependencies: [],
+        priority: null,
+    },
+    //Epic: SF Account Executive
+    {
+        id: "sf-account-executive-onboarding-ui",
+        title: "Onboarding UI",
+        epic: "SF Account Executive",
+        minSP: 1,
+        maxSP: 3,
+        dependencies: [],
+        priority: null,
+    },
+    {
+        id: "sf-account-executive-profile-ui",
+        title: "Profile UI",
+        epic: "SF Account Executive",
+        minSP: 3,
+        maxSP: 5,
+        dependencies: ["sf-account-executive-onboarding-ui"],
+        priority: null,
+    },
+    {
+        id: "sf-account-executive-profile-integration",
+        title: "Profile integration",
+        epic: "SF Account Executive",
+        minSP: 5,
+        maxSP: 8,
+        dependencies: ["sf-account-executive-profile-ui"],
+        priority: null,
+    },
+    {
+        id: "sf-account-executive-searching-consultants-ui",
+        title: "Searching consultants UI",
+        epic: "SF Account Executive",
+        minSP: 1,
+        maxSP: 1,
+        dependencies: [],
+        priority: null,
+    },
+    {
+        id: "sf-account-executive-interview-ui",
+        title: "Interview UI",
+        epic: "SF Account Executive",
+        minSP: 3,
+        maxSP: 5,
+        dependencies: ["sf-account-executive-searching-consultants-ui"],
+        priority: null,
+    },
+    {
+        id: "sf-account-executive-interview-integration",
+        title: "Interview integration",
+        epic: "SF Account Executive",
+        minSP: 5,
+        maxSP: 8,
+        dependencies: ["sf-account-executive-interview-ui"],
+        priority: null,
     },
 ];
 
