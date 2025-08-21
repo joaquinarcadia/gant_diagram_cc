@@ -22,6 +22,22 @@ interface TimelineStory extends UserStory {
     sprintStartDate: Date;
 }
 
+// Helper function to convert story points to working days
+const storyPointsToWorkingDays = (storyPoints: number): number => {
+    switch (storyPoints) {
+        case 1:
+            return 1;
+        case 3:
+            return 3;
+        case 5:
+            return 5;
+        case 8:
+            return 10;
+        default:
+            return storyPoints; // fallback for other values
+    }
+};
+
 // Helper function to check if all dependencies are completed
 const areDependenciesCompleted = (dependencies: string[], completedStories: Set<string>): boolean => {
     return dependencies.every((dep) => completedStories.has(dep));
@@ -62,15 +78,18 @@ const findAvailableDeveloperAndSprint = (
     story: UserStory,
     latestDependencyEndDate: Date,
     developerSprintAssignments: { [key: string]: number },
+    developerStoryAssignments: { [key: string]: { startDate: Date; endDate: Date }[] },
     teamSize: number,
     estimationType: "min" | "max"
 ) => {
     const storyPoints = estimationType === "min" ? story.minSP : story.maxSP;
+    const workingDays = storyPointsToWorkingDays(storyPoints);
 
     // Find the earliest sprint that can accommodate this story
     let currentSprintStart = getSprintStartDate(latestDependencyEndDate);
     let assignedDeveloper = -1;
     let assignedSprintStart: Date | null = null;
+    let assignedStoryStartDate: Date | null = null;
 
     // Try sprints until we find one with available capacity
     while (assignedDeveloper === -1) {
@@ -80,11 +99,33 @@ const findAvailableDeveloperAndSprint = (
         for (let dev = 0; dev < teamSize; dev++) {
             const devSprintKey = `${dev}-${currentSprintStart.getTime()}`;
             const currentSP = developerSprintAssignments[devSprintKey] || 0;
+            const devStoriesKey = `${dev}-${currentSprintStart.getTime()}`;
+            const currentStories = developerStoryAssignments[devStoriesKey] || [];
 
+            // Check if we can add this story's story points
             if (currentSP + storyPoints <= STORY_POINTS_PER_DEVELOPER_PER_SPRINT) {
-                assignedDeveloper = dev;
-                assignedSprintStart = currentSprintStart;
-                break;
+                // If the developer has no stories in this sprint, the story can start on the latest dependency end date
+                let earliestStartDate = latestDependencyEndDate;
+
+                if (currentStories.length > 0) {
+                    const lastStoryEndDate = new Date(Math.max(...currentStories.map((s) => s.endDate.getTime())));
+                    earliestStartDate = getNextWorkingDay(lastStoryEndDate);
+                }
+
+                // Check if the story can fit within the sprint
+                const storyEndDate = new Date(earliestStartDate);
+                let workingDaysCount = 0;
+                while (workingDaysCount < workingDays - 1) {
+                    storyEndDate.setTime(getNextWorkingDay(storyEndDate).getTime());
+                    workingDaysCount++;
+                }
+
+                if (storyEndDate <= sprintEnd) {
+                    assignedDeveloper = dev;
+                    assignedSprintStart = currentSprintStart;
+                    assignedStoryStartDate = earliestStartDate;
+                    break;
+                }
             }
         }
 
@@ -97,7 +138,9 @@ const findAvailableDeveloperAndSprint = (
     return {
         assignedDeveloper,
         sprintStartDate: assignedSprintStart,
+        storyStartDate: assignedStoryStartDate,
         storyPoints,
+        workingDays,
     };
 };
 
@@ -106,6 +149,7 @@ export const calculateTimeline = (userStories: UserStory[], startDate: Date, est
     const timeline: TimelineStory[] = [];
     const completedStories = new Set<string>();
     const developerSprintAssignments: { [key: string]: number } = {}; // Track story points per developer per sprint
+    const developerStoryAssignments: { [key: string]: { startDate: Date; endDate: Date }[] } = {}; // Track story assignments per developer per sprint
 
     // Process stories in dependency order
     const processStories = (): boolean => {
@@ -128,31 +172,32 @@ export const calculateTimeline = (userStories: UserStory[], startDate: Date, est
                 }
 
                 // Find available developer and sprint
-                const { assignedDeveloper, sprintStartDate, storyPoints } = findAvailableDeveloperAndSprint(
+                const { assignedDeveloper, sprintStartDate, storyStartDate, storyPoints, workingDays } = findAvailableDeveloperAndSprint(
                     story,
                     latestDependencyEndDate,
                     developerSprintAssignments,
+                    developerStoryAssignments,
                     teamSize,
                     estimationType
                 );
 
-                // Calculate story start date (within the sprint)
-                let storyStartDate;
+                // Calculate story start date
+                let finalStoryStartDate;
                 if (story.dependencies.length === 0) {
                     // First story: start exactly on selected start date
-                    storyStartDate = startDate;
+                    finalStoryStartDate = startDate;
                 } else {
-                    storyStartDate = getNextWorkingDay(latestDependencyEndDate);
+                    finalStoryStartDate = storyStartDate!;
                 }
 
-                // Calculate end date - duration equals story points in working days (excluding weekends)
-                let endDate = new Date(storyStartDate);
-                let workingDays = 0;
+                // Calculate end date based on working days
+                let endDate = new Date(finalStoryStartDate);
+                let workingDaysCount = 0;
 
-                // Count working days until we reach the required story points
-                while (workingDays < storyPoints - 1) {
+                // Count working days until we reach the required working days
+                while (workingDaysCount < workingDays - 1) {
                     endDate = getNextWorkingDay(endDate);
-                    workingDays++;
+                    workingDaysCount++;
                 }
 
                 // Update developer sprint assignments
@@ -160,11 +205,21 @@ export const calculateTimeline = (userStories: UserStory[], startDate: Date, est
                     const devSprintKey = `${assignedDeveloper}-${sprintStartDate.getTime()}`;
                     developerSprintAssignments[devSprintKey] = (developerSprintAssignments[devSprintKey] || 0) + storyPoints;
 
+                    // Update developer story assignments
+                    const devStoriesKey = `${assignedDeveloper}-${sprintStartDate.getTime()}`;
+                    if (!developerStoryAssignments[devStoriesKey]) {
+                        developerStoryAssignments[devStoriesKey] = [];
+                    }
+                    developerStoryAssignments[devStoriesKey].push({
+                        startDate: finalStoryStartDate,
+                        endDate: endDate,
+                    });
+
                     timeline.push({
                         ...story,
-                        startDate: storyStartDate,
+                        startDate: finalStoryStartDate,
                         endDate,
-                        duration: storyPoints,
+                        duration: workingDays,
                         storyPoints,
                         assignedDeveloper: assignedDeveloper + 1, // Developer number (1-based)
                         sprintStartDate,
