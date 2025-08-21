@@ -1,36 +1,30 @@
-name: Deploy to GitHub Pages
+name: Deploy to Vercel
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    build-and-deploy:
-        runs-on: ubuntu-latest
-        # permissions:
-        #     pages: write
-        #     id-token: write
-        # environment:
-        #     name: github-pages
+  deploy-to-vercel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "lts/*"
+      - name: Install Vercel CLI
+        run: npm install -g vercel
 
-            - name: Install dependencies
-              run: npm install
+      - name: Pull Vercel Project Settings
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-            - name: Build static site
-              run: npm run build
+      - name: Build Project
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-            - name: Deploy to GitHub Pages
-              uses: peaceiris/actions-gh-pages@v3
-              with:
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
-                  publish_dir: ./dist
+      - name: Deploy Project
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
