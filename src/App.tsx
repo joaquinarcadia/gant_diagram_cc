@@ -1,18 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 
-import {
-    Box,
-    Button,
-    Container,
-    CssBaseline,
-    Grid,
-    Paper,
-    ThemeProvider,
-    ToggleButton,
-    ToggleButtonGroup,
-    Typography,
-    IconButton,
-} from "@mui/material";
+import { Box, Container, CssBaseline, Grid, Paper, ThemeProvider, ToggleButton, ToggleButtonGroup, Typography, IconButton } from "@mui/material";
 import { Brightness4, CalendarToday } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -20,11 +8,10 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 import { format } from "date-fns";
 
-import StoryForm from "./components/StoryForm/StoryForm";
 import GanttChart from "./components/GanttChart/GanttChart";
 
 import { calculateProjectEndDate } from "./utils/timelineCalculator";
-import { getEpicsFromStories } from "./utils/epicUtils";
+
 import {
     getStories,
     setStories as saveStoriesToStorage,
@@ -43,7 +30,6 @@ function App() {
     const [startDate, setStartDate] = useState<Date | null>(getStartDate()); // Load from storage
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [stories, setStories] = useState<UserStory[]>(getStories()); // Load from storage
-    const [isStoryFormOpen, setIsStoryFormOpen] = useState(false);
     const [themeMode, setThemeMode] = useState<"light" | "dark">(getTheme()); // Load from storage
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -100,28 +86,6 @@ function App() {
     const handleDateChange = (newValue: Date | null) => {
         setStartDate(newValue);
         setShowDatePicker(false);
-    };
-
-    const handleAddStory = (story: Partial<UserStory>) => {
-        console.log("Adding story:", story);
-
-        const newStory: UserStory = {
-            id: (story.title ?? "new-story").toLowerCase().replace(/\s+/g, "-"),
-            title: story.title ?? "Untitled",
-            epic: story.epic ?? "",
-            minSP: story.minSP ?? 1,
-            maxSP: story.maxSP ?? 1,
-            dependencies: story.dependencies ?? [],
-            priority: story.priority ?? null,
-        };
-
-        console.log("Created new story:", newStory);
-
-        setStories((prev) => {
-            const updated = [...prev, newStory];
-            console.log("Updated stories array:", updated);
-            return updated;
-        });
     };
 
     return (
@@ -224,19 +188,6 @@ function App() {
                             </Paper>
                         </Box>
 
-                        <Box sx={{ mb: 2, display: "flex", justifyContent: "center", gap: 2 }}>
-                            <Button variant="contained" onClick={() => setIsStoryFormOpen(true)}>
-                                Add Story
-                            </Button>
-                        </Box>
-
-                        <StoryForm
-                            epics={getEpicsFromStories(stories)}
-                            stories={stories}
-                            onAddStory={handleAddStory}
-                            open={isStoryFormOpen}
-                            onClose={() => setIsStoryFormOpen(false)}
-                        />
                         {!isLoaded ? (
                             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
                                 <Typography variant="body1" color="text.secondary">

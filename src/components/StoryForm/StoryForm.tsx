@@ -140,7 +140,7 @@ const StoryForm: React.FC<AddStoryFormProps> = ({ epics, stories, onAddStory, op
                                     freeSolo
                                     options={epics}
                                     value={value || null}
-                                    onChange={(event, newValue) => {
+                                    onChange={(newValue) => {
                                         onChange(newValue);
                                     }}
                                     renderInput={(params) => (
