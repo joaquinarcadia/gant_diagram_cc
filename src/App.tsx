@@ -1,246 +1,73 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 
-import { ThemeProvider, createTheme, CssBaseline, Container, Box, Typography, ToggleButton, ToggleButtonGroup, Paper, Grid } from "@mui/material";
-import { CalendarToday } from "@mui/icons-material";
+import {
+    Box,
+    Button,
+    Container,
+    CssBaseline,
+    Grid,
+    Paper,
+    ThemeProvider,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+    IconButton,
+} from "@mui/material";
+import { Brightness4, CalendarToday } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 import { format } from "date-fns";
 
-import GanttChart from "./components/GanttChart";
+import StoryForm from "./components/StoryForm/StoryForm";
+import GanttChart from "./components/GanttChart/GanttChart";
 
 import { calculateProjectEndDate } from "./utils/timelineCalculator";
+import { getEpicsFromStories } from "./utils/epicUtils";
+import {
+    getStories,
+    setStories as saveStoriesToStorage,
+    getTheme,
+    getStartDate,
+    setTheme as saveThemeToStorage,
+    setStartDate as saveDateToStorage,
+} from "./utils/storage";
 
-const theme = createTheme({
-    palette: {
-        mode: "light",
-        primary: {
-            main: "#1976d2",
-        },
-        secondary: {
-            main: "#dc004e",
-        },
-    },
-});
+import type { UserStory } from "./types/user-story.types";
 
-const PRIORITIES = {
-    LOW: "low",
-    MEDIUM: "medium",
-    HIGH: "high",
-} as const;
-
-interface UserStory {
-    id: string;
-    title: string;
-    epic: string;
-    minSP: number;
-    maxSP: number;
-    dependencies: string[];
-    priority: (typeof PRIORITIES)[keyof typeof PRIORITIES] | null;
-}
-
-// User stories data
-const userStories: UserStory[] = [
-    // Epic: Consultant
-    {
-        id: "consultant-job-ui",
-        title: "Job opening UI",
-        epic: "Consultant",
-        minSP: 3,
-        maxSP: 5,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "consultant-job-integration",
-        title: "Job opening integration",
-        epic: "Consultant",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["consultant-job-ui"],
-        priority: null,
-    },
-    {
-        id: "consultant-payments",
-        title: "Payments integration",
-        epic: "Consultant",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: [],
-        priority: null,
-    },
-
-    // Epic: Client
-    {
-        id: "client-interviews",
-        title: "Interviews integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "client-new-interview",
-        title: "New interview integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["client-interviews"],
-        priority: null,
-    },
-    {
-        id: "client-hire-contract",
-        title: "(Hire) -> Complete and verify contract details",
-        epic: "Client",
-        minSP: 3,
-        maxSP: 3,
-        dependencies: ["client-new-interview"],
-        priority: null,
-    },
-    {
-        id: "client-docusign",
-        title: "DocuSign integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["client-hire-contract"],
-        priority: null,
-    },
-    {
-        id: "client-job-integration",
-        title: "Job opening integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "client-post-job",
-        title: "Post new job opening integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["client-job-integration"],
-        priority: null,
-    },
-    {
-        id: "client-search-ui",
-        title: "Searching consultants UI",
-        epic: "Client",
-        minSP: 1,
-        maxSP: 1,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "client-projects-ui",
-        title: "Projects UI",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 5,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "client-projects-integration",
-        title: "Projects integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["client-projects-ui"],
-        priority: null,
-    },
-    {
-        id: "client-worklog-ui",
-        title: "Projects work log UI",
-        epic: "Client",
-        minSP: 3,
-        maxSP: 5,
-        dependencies: ["client-projects-integration"],
-        priority: null,
-    },
-    {
-        id: "client-worklog-integration",
-        title: "Projects work log integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["client-worklog-ui"],
-        priority: null,
-    },
-    {
-        id: "client-payments",
-        title: "Payments integration",
-        epic: "Client",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: [],
-        priority: null,
-    },
-    //Epic: SF Account Executive
-    {
-        id: "sf-account-executive-onboarding-ui",
-        title: "Onboarding UI",
-        epic: "SF Account Executive",
-        minSP: 1,
-        maxSP: 3,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "sf-account-executive-profile-ui",
-        title: "Profile UI",
-        epic: "SF Account Executive",
-        minSP: 3,
-        maxSP: 5,
-        dependencies: ["sf-account-executive-onboarding-ui"],
-        priority: null,
-    },
-    {
-        id: "sf-account-executive-profile-integration",
-        title: "Profile integration",
-        epic: "SF Account Executive",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["sf-account-executive-profile-ui"],
-        priority: null,
-    },
-    {
-        id: "sf-account-executive-searching-consultants-ui",
-        title: "Searching consultants UI",
-        epic: "SF Account Executive",
-        minSP: 1,
-        maxSP: 1,
-        dependencies: [],
-        priority: null,
-    },
-    {
-        id: "sf-account-executive-interview-ui",
-        title: "Interview UI",
-        epic: "SF Account Executive",
-        minSP: 3,
-        maxSP: 5,
-        dependencies: ["sf-account-executive-searching-consultants-ui"],
-        priority: null,
-    },
-    {
-        id: "sf-account-executive-interview-integration",
-        title: "Interview integration",
-        epic: "SF Account Executive",
-        minSP: 5,
-        maxSP: 8,
-        dependencies: ["sf-account-executive-interview-ui"],
-        priority: null,
-    },
-];
+import { lightTheme, darkTheme } from "@/theme/theme";
 
 function App() {
     const [estimationType, setEstimationType] = useState<"min" | "max">("min");
-    const [startDate, setStartDate] = useState<Date | null>(new Date()); // Default to today
+    const [startDate, setStartDate] = useState<Date | null>(getStartDate()); // Load from storage
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [stories, setStories] = useState<UserStory[]>(getStories()); // Load from storage
+    const [isStoryFormOpen, setIsStoryFormOpen] = useState(false);
+    const [themeMode, setThemeMode] = useState<"light" | "dark">(getTheme()); // Load from storage
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    const theme = useMemo(() => (themeMode === "light" ? lightTheme : darkTheme), [themeMode]);
+
+    // Persist stories to localStorage whenever they change
+    useEffect(() => {
+        saveStoriesToStorage(stories);
+    }, [stories]);
+
+    // Persist theme to localStorage whenever it changes
+    useEffect(() => {
+        saveThemeToStorage(themeMode);
+    }, [themeMode]);
+
+    // Persist start date to localStorage whenever it changes
+    useEffect(() => {
+        saveDateToStorage(startDate);
+    }, [startDate]);
+
+    // Mark as loaded after initial render
+    useEffect(() => {
+        setIsLoaded(true);
+    }, []);
 
     const handleShowDatePicker = () => {
         setShowDatePicker(!showDatePicker);
@@ -249,15 +76,15 @@ function App() {
     // Calculate end dates for both minimum and maximum cases
     const minEndDate = useMemo(() => {
         if (!startDate) return null;
-        const endDate = calculateProjectEndDate(userStories, startDate, "min", 3);
+        const endDate = calculateProjectEndDate(stories, startDate, "min", 3);
         return endDate;
-    }, [startDate]);
+    }, [startDate, stories]);
 
     const maxEndDate = useMemo(() => {
         if (!startDate) return null;
-        const endDate = calculateProjectEndDate(userStories, startDate, "max", 3);
+        const endDate = calculateProjectEndDate(stories, startDate, "max", 3);
         return endDate;
-    }, [startDate]);
+    }, [startDate, stories]);
 
     const handleEstimationChange = (_event: React.MouseEvent<HTMLElement>, newEstimationType: "min" | "max" | null) => {
         if (newEstimationType !== null) {
@@ -273,6 +100,28 @@ function App() {
     const handleDateChange = (newValue: Date | null) => {
         setStartDate(newValue);
         setShowDatePicker(false);
+    };
+
+    const handleAddStory = (story: Partial<UserStory>) => {
+        console.log("Adding story:", story);
+
+        const newStory: UserStory = {
+            id: (story.title ?? "new-story").toLowerCase().replace(/\s+/g, "-"),
+            title: story.title ?? "Untitled",
+            epic: story.epic ?? "",
+            minSP: story.minSP ?? 1,
+            maxSP: story.maxSP ?? 1,
+            dependencies: story.dependencies ?? [],
+            priority: story.priority ?? null,
+        };
+
+        console.log("Created new story:", newStory);
+
+        setStories((prev) => {
+            const updated = [...prev, newStory];
+            console.log("Updated stories array:", updated);
+            return updated;
+        });
     };
 
     return (
@@ -362,11 +211,41 @@ function App() {
                                             <ToggleButton value="max">Maximum Story Points</ToggleButton>
                                         </ToggleButtonGroup>
                                     </Grid>
+                                    <Grid>
+                                        <IconButton
+                                            sx={{ ml: 1 }}
+                                            onClick={() => setThemeMode(themeMode === "light" ? "dark" : "light")}
+                                            color="inherit"
+                                        >
+                                            <Brightness4 />
+                                        </IconButton>
+                                    </Grid>
                                 </Grid>
                             </Paper>
                         </Box>
 
-                        {startDate && <GanttChart userStories={userStories} startDate={startDate} estimationType={estimationType} teamSize={3} />}
+                        <Box sx={{ mb: 2, display: "flex", justifyContent: "center", gap: 2 }}>
+                            <Button variant="contained" onClick={() => setIsStoryFormOpen(true)}>
+                                Add Story
+                            </Button>
+                        </Box>
+
+                        <StoryForm
+                            epics={getEpicsFromStories(stories)}
+                            stories={stories}
+                            onAddStory={handleAddStory}
+                            open={isStoryFormOpen}
+                            onClose={() => setIsStoryFormOpen(false)}
+                        />
+                        {!isLoaded ? (
+                            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                                <Typography variant="body1" color="text.secondary">
+                                    Loading data...
+                                </Typography>
+                            </Box>
+                        ) : startDate ? (
+                            <GanttChart userStories={stories} startDate={startDate} estimationType={estimationType} teamSize={3} />
+                        ) : null}
                     </Box>
                 </Container>
             </LocalizationProvider>

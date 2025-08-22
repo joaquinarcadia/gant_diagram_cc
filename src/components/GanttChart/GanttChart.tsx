@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
-
+import { useTheme } from "@mui/material/styles";
 import { Box, Paper, Typography, Chip, Divider } from "@mui/material";
 import { format, addDays, isWeekend } from "date-fns";
 
-import { calculateTimeline } from "../utils/timelineCalculator";
+import { calculateTimeline } from "../../utils/timelineCalculator";
 
 interface UserStory {
     id: string;
@@ -22,6 +22,8 @@ interface GanttChartProps {
 }
 
 const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimationType, teamSize }) => {
+    const theme = useTheme();
+
     // Calculate timeline for each story
     const timelineData = useMemo(() => {
         return calculateTimeline(userStories, startDate, estimationType, teamSize);
@@ -59,30 +61,23 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
     }, [timelineData]);
 
     const getEpicColor = (epic: string) => {
-        return epic === "Consultant" ? "#1976d2" : "#dc004e";
+        return epic === "Consultant" ? theme.palette.primary.main : theme.palette.secondary.main;
     };
 
     const getStoryColor = (story: any) => {
-        // Assign different colors to each story
         const colors = [
-            "#1976d2", // Blue
-            "#dc004e", // Red
-            "#ff9800", // Orange
-            "#4caf50", // Green
-            "#9c27b0", // Purple
-            "#00bcd4", // Cyan
-            "#ff5722", // Deep Orange
-            "#795548", // Brown
-            "#607d8b", // Blue Grey
-            "#e91e63", // Pink
-            "#3f51b5", // Indigo
-            "#009688", // Teal
-            "#ffc107", // Amber
-            "#8bc34a", // Light Green
-            "#ff4081", // Pink
+            theme.palette.primary.light,
+            theme.palette.secondary.light,
+            theme.palette.success.light,
+            theme.palette.warning.light,
+            theme.palette.info.light,
+            theme.palette.primary.dark,
+            theme.palette.secondary.dark,
+            theme.palette.success.dark,
+            theme.palette.warning.dark,
+            theme.palette.info.dark,
         ];
 
-        // Use story ID to consistently assign colors
         const storyIndex = userStories.findIndex((s) => s.id === story.id);
         return colors[storyIndex % colors.length];
     };
@@ -109,12 +104,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
                             sx={{
                                 minWidth: 40,
                                 height: 30,
-                                border: "1px solid #e0e0e0",
+                                border: `1px solid ${theme.palette.divider}`,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 fontSize: "0.75rem",
-                                backgroundColor: isWeekend(date) ? "#f5f5f5" : "white",
+                                backgroundColor: isWeekend(date) ? theme.palette.action.hover : theme.palette.background.paper,
                                 fontWeight: isWeekend(date) ? "bold" : "normal",
                                 flexShrink: 0,
                             }}
@@ -141,7 +136,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
                                 label={epic}
                                 sx={{
                                     backgroundColor: getEpicColor(epic),
-                                    color: "white",
+                                    color: theme.palette.getContrastText(getEpicColor(epic)),
                                     fontWeight: "bold",
                                 }}
                             />
@@ -156,9 +151,9 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
                                 <Typography variant="body2" sx={{ fontSize: "0.875rem", fontWeight: "bold" }}>
                                     {story.title}
                                     {story.dependencies.length > 0 && (
-                                        <span style={{ color: "#666", fontSize: "0.7rem", marginLeft: "8px", fontWeight: "normal" }}>
+                                        <Typography component="span" variant="caption" sx={{ color: "text.secondary", ml: 1 }}>
                                             (depends on {story.dependencies.length} story{story.dependencies.length > 1 ? "ies" : ""})
-                                        </span>
+                                        </Typography>
                                     )}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
@@ -176,11 +171,11 @@ const GanttChart: React.FC<GanttChartProps> = ({ userStories, startDate, estimat
                                             sx={{
                                                 minWidth: 40,
                                                 height: 30,
-                                                borderRight: index === dateHeaders.length - 1 ? "1px solid #e0e0e0" : "none",
-                                                borderLeft: index === 0 ? "1px solid #e0e0e0" : "none",
-                                                borderTop: "1px solid #e0e0e0",
-                                                borderBottom: "1px solid #e0e0e0",
-                                                backgroundColor: isInRange ? getStoryColor(story) : "transparent",
+                                                borderRight: index === dateHeaders.length - 1 ? `1px solid ${theme.palette.divider}` : "none",
+                                                borderLeft: index === 0 ? `1px solid ${theme.palette.divider}` : "none",
+                                                borderTop: `1px solid ${theme.palette.divider}`,
+                                                borderBottom: `1px solid ${theme.palette.divider}`,
+                                                backgroundColor: "transparent",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
